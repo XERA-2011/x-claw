@@ -1,0 +1,13 @@
+# 敏感信息
+.env
+
+# OpenClaw 克隆源码
+openclaw/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,107 @@
+# ┌──────────────────────────────────────────────────────────────────┐
+# │  OpenClaw — Security-Hardened Docker Compose for MacBook Air   │
+# │  16GB M4 · Localhost-only · No Sandbox                         │
+# └──────────────────────────────────────────────────────────────────┘
+
+services:
+  openclaw-gateway:
+    image: ${OPENCLAW_IMAGE:-openclaw:local}
+    container_name: openclaw-gateway
+
+    # ── 网络：仅绑定 localhost，外部不可访问 ──
+    ports:
+      - "127.0.0.1:${OPENCLAW_GATEWAY_PORT:-18789}:18789"
+      - "127.0.0.1:${OPENCLAW_BRIDGE_PORT:-18790}:18790"
+    networks:
+      - openclaw-net
+
+    # ── 环境变量 ──
+    environment:
+      HOME: /home/node
+      TERM: xterm-256color
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: ${OPENCLAW_ALLOW_INSECURE_PRIVATE_WS:-}
+      # ── 代理设置（通过宿主机代理访问外部 API）──
+      HTTP_PROXY: ${HTTP_PROXY:-http://host.docker.internal:7890}
+      HTTPS_PROXY: ${HTTPS_PROXY:-http://host.docker.internal:7890}
+      ALL_PROXY: ${ALL_PROXY:-socks5://host.docker.internal:7890}
+      NO_PROXY: "localhost,127.0.0.1,host.docker.internal"
+
+    # ── 数据卷：仅挂载必要目录，不挂载 docker.sock ──
+    volumes:
+      - ${OPENCLAW_CONFIG_DIR:-~/.openclaw}:/home/node/.openclaw
+      - ${OPENCLAW_WORKSPACE_DIR:-~/openclaw/workspace}:/home/node/.openclaw/workspace
+
+    # ── 安全加固 ──
+    cap_drop:
+      - ALL # 丢弃所有 Linux 权限
+    security_opt:
+      - no-new-privileges:true # 禁止容器内进程提权
+    read_only: true # 只读文件系统
+    tmpfs:
+      - /tmp:size=256m # 可写临时目录（限制 256MB）
+      - /home/node/.npm:size=64m
+
+    # ── 资源限制：保障日常使用流畅 ──
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0" # 最多使用 2 核 (M4 共 10 核)
+          memory: 2g # 最多使用 2GB (总计 16GB)
+        reservations:
+          cpus: "0.5" # 保底 0.5 核
+          memory: 512m # 保底 512MB
+
+    # ── 进程管理 ──
+    init: true
+    restart: unless-stopped
+    command: [ "node", "dist/index.js", "gateway", "--bind", "${OPENCLAW_GATEWAY_BIND:-lan}", "--port", "18789" ]
+
+    # ── 健康检查 ──
+    healthcheck:
+      test: [ "CMD", "node", "-e", "fetch('http://127.0.0.1:18789/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" ]
+      interval: 60s # 每 60 秒检查一次（减少资源消耗）
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # ── CLI 容器：按需运行管理命令 ──
+  openclaw-cli:
+    image: ${OPENCLAW_IMAGE:-openclaw:local}
+    container_name: openclaw-cli
+    network_mode: "service:openclaw-gateway"
+    profiles:
+      - cli # 不随 gateway 自动启动，需手动 --profile cli
+
+    # ── 安全加固 ──
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m
+      - /home/node/.npm:size=64m
+
+    environment:
+      HOME: /home/node
+      TERM: xterm-256color
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: ${OPENCLAW_ALLOW_INSECURE_PRIVATE_WS:-}
+      BROWSER: echo
+
+    volumes:
+      - ${OPENCLAW_CONFIG_DIR:-~/.openclaw}:/home/node/.openclaw
+      - ${OPENCLAW_WORKSPACE_DIR:-~/openclaw/workspace}:/home/node/.openclaw/workspace
+
+    stdin_open: true
+    tty: true
+    init: true
+    entrypoint: [ "node", "dist/index.js" ]
+    depends_on:
+      - openclaw-gateway
+
+# ── 网络：专用隔离网络 ──
+networks:
+  openclaw-net:
+    driver: bridge
