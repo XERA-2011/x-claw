@@ -20,6 +20,7 @@ services:
       HOME: /home/node
       TERM: xterm-256color
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
       OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: ${OPENCLAW_ALLOW_INSECURE_PRIVATE_WS:-}
       # ── 代理设置（通过宿主机代理访问外部 API）──
       HTTP_PROXY: ${HTTP_PROXY:-http://host.docker.internal:7890}
@@ -87,7 +88,12 @@ services:
       HOME: /home/node
       TERM: xterm-256color
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
       OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: ${OPENCLAW_ALLOW_INSECURE_PRIVATE_WS:-}
+      HTTP_PROXY: ${HTTP_PROXY:-http://host.docker.internal:7890}
+      HTTPS_PROXY: ${HTTPS_PROXY:-http://host.docker.internal:7890}
+      ALL_PROXY: ${ALL_PROXY:-socks5://host.docker.internal:7890}
+      NO_PROXY: "localhost,127.0.0.1,host.docker.internal"
       BROWSER: echo
 
     volumes:
