@@ -21,7 +21,9 @@ services:
       TERM: xterm-256color
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: ${OPENCLAW_ALLOW_INSECURE_PRIVATE_WS:-}
+      PLAYWRIGHT_BROWSERS_PATH: /home/node/.cache/ms-playwright
       # ── 代理设置（通过宿主机代理访问外部 API）──
       HTTP_PROXY: ${HTTP_PROXY:-http://host.docker.internal:7890}
       HTTPS_PROXY: ${HTTPS_PROXY:-http://host.docker.internal:7890}
@@ -32,6 +34,7 @@ services:
     volumes:
       - ${OPENCLAW_CONFIG_DIR:-~/.openclaw}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR:-~/openclaw/workspace}:/home/node/.openclaw/workspace
+      - ${OPENCLAW_CONFIG_DIR:-~/.openclaw}/ms-playwright:/home/node/.cache/ms-playwright
 
     # ── 安全加固 ──
     cap_drop:
@@ -89,7 +92,9 @@ services:
       TERM: xterm-256color
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: ${OPENCLAW_ALLOW_INSECURE_PRIVATE_WS:-}
+      PLAYWRIGHT_BROWSERS_PATH: /home/node/.cache/ms-playwright
       HTTP_PROXY: ${HTTP_PROXY:-http://host.docker.internal:7890}
       HTTPS_PROXY: ${HTTPS_PROXY:-http://host.docker.internal:7890}
       ALL_PROXY: ${ALL_PROXY:-socks5://host.docker.internal:7890}
@@ -99,6 +104,7 @@ services:
     volumes:
       - ${OPENCLAW_CONFIG_DIR:-~/.openclaw}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR:-~/openclaw/workspace}:/home/node/.openclaw/workspace
+      - ${OPENCLAW_CONFIG_DIR:-~/.openclaw}/ms-playwright:/home/node/.cache/ms-playwright
 
     stdin_open: true
     tty: true

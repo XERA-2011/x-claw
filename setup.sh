@@ -21,6 +21,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OPENCLAW_REPO_DIR="$SCRIPT_DIR/openclaw"
 ENV_FILE="$SCRIPT_DIR/.env"
 
+normalize_docker_proxy() {
+  local value="${1:-}"
+  if [[ -z "$value" ]]; then
+    return 0
+  fi
+  value="${value//127.0.0.1/host.docker.internal}"
+  value="${value//localhost/host.docker.internal}"
+  printf '%s' "$value"
+}
+
 # ══════════════════════════════════════════════
 #  1. 前置检查
 # ══════════════════════════════════════════════
@@ -64,10 +74,35 @@ ok "OpenClaw 源码就绪"
 #  3. 构建 Docker 镜像
 # ══════════════════════════════════════════════
 info "构建 Docker 镜像 (首次约需 3-5 分钟)..."
-docker build \
-  --tag openclaw:local \
-  --file "$OPENCLAW_REPO_DIR/Dockerfile" \
-  "$OPENCLAW_REPO_DIR"
+
+DOCKER_HTTP_PROXY="$(normalize_docker_proxy "${HTTP_PROXY:-${http_proxy:-}}")"
+DOCKER_HTTPS_PROXY="$(normalize_docker_proxy "${HTTPS_PROXY:-${https_proxy:-}}")"
+DOCKER_ALL_PROXY="$(normalize_docker_proxy "${ALL_PROXY:-${all_proxy:-}}")"
+DOCKER_NO_PROXY="${NO_PROXY:-${no_proxy:-localhost,127.0.0.1,host.docker.internal}}"
+
+DOCKER_BUILD_ARGS=(
+  --tag openclaw:local
+  --file "$OPENCLAW_REPO_DIR/Dockerfile"
+)
+
+if [[ -n "$DOCKER_HTTP_PROXY" ]]; then
+  info "检测到 HTTP_PROXY，构建阶段将通过 $DOCKER_HTTP_PROXY 访问外网"
+  DOCKER_BUILD_ARGS+=(--build-arg "HTTP_PROXY=$DOCKER_HTTP_PROXY")
+fi
+
+if [[ -n "$DOCKER_HTTPS_PROXY" ]]; then
+  DOCKER_BUILD_ARGS+=(--build-arg "HTTPS_PROXY=$DOCKER_HTTPS_PROXY")
+fi
+
+if [[ -n "$DOCKER_ALL_PROXY" ]]; then
+  DOCKER_BUILD_ARGS+=(--build-arg "ALL_PROXY=$DOCKER_ALL_PROXY")
+fi
+
+if [[ -n "$DOCKER_NO_PROXY" ]]; then
+  DOCKER_BUILD_ARGS+=(--build-arg "NO_PROXY=$DOCKER_NO_PROXY")
+fi
+
+docker build "${DOCKER_BUILD_ARGS[@]}" "$OPENCLAW_REPO_DIR"
 ok "Docker 镜像构建完成"
 
 # ══════════════════════════════════════════════
