@@ -10,6 +10,8 @@
   - 包含如何配置限制权限命令、Chrome 扩展中继的安装与安全最佳实践。
 - [DELETE](./DELETE.md)
   - 包含如何彻底清理并卸载 OpenClaw 及其配置文件、遗留目录和后台服务。
+- [SKILLS](./SKILLS.md)
+  - 包含本仓库内 OpenClaw 技能的安装与使用说明。
 
 ## 参考资源
 

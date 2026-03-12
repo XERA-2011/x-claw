@@ -1,0 +1,6 @@
+interface:
+  display_name: "A-Share Monitor"
+  short_description: "Fetch A-share quotes and LHB data via efinance"
+  default_prompt: "Use $a_share_monitor to fetch a realtime A-share quote."
+policy:
+  allow_implicit_invocation: true
